@@ -1,0 +1,31 @@
+{
+  "name": "devweyes/ws-server-cluster",
+  "description": "websocket cluster server for swoft",
+  "license": "Apache-2.0",
+  "keywords": [
+    "websocket",
+    "swoft",
+    "cluster"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Jcsp\\WsCluster\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">7.1",
+    "ext-redis": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "swoft/websocket-server": "~2.0.0",
+    "swoft/redis": "~2.0.0",
+    "swoft/stdlib": "~2.0.0",
+    "swoft/bean": "~2.0.0"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://mirrors.aliyun.com/composer/"
+    }
+  ]
+}
