@@ -20,6 +20,7 @@
     "swoft/websocket-server": "~2.0.0",
     "swoft/redis": "~2.0.0",
     "swoft/stdlib": "~2.0.0",
+    "swoft/serialize": "~2.0.0",
     "swoft/bean": "~2.0.0"
   },
   "repositories": [

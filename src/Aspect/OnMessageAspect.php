@@ -3,6 +3,7 @@
 namespace Jcsp\WsCluster\Aspect;
 
 use Jcsp\WsCluster\ClusterManager;
+use Jcsp\WsCluster\Event;
 use Swoft\Aop\Annotation\Mapping\After;
 use Swoft\Aop\Annotation\Mapping\AfterReturning;
 use Swoft\Aop\Annotation\Mapping\AfterThrowing;
@@ -15,6 +16,7 @@ use Swoft\Aop\Point\JoinPoint;
 use Swoft\Aop\Point\ProceedingJoinPoint;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\WebSocket\Server\Annotation\Mapping\OnMessage;
+use Swoft\WebSocket\Server\Context\WsMessageContext;
 
 /**
  * Class OnMessageAspect
@@ -32,6 +34,7 @@ class OnMessageAspect
      * @var ClusterManager
      */
     private $clusterManager;
+
     /**
      * @Around()
      *
@@ -45,8 +48,10 @@ class OnMessageAspect
         $className = $proceedingJoinPoint->getClassName();
         $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
-        //TODO 收消息消息事件
-
+        //收消息消息事件
+        /** @var WsMessageContext $context */
+        $context = context();
+        Event::recvMessage($this->clusterManager->getServerId(), $context->getFd(), $context->getMessage());
         $result = $proceedingJoinPoint->proceed();
         // After around
 

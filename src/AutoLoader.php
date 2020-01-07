@@ -58,16 +58,16 @@ final class AutoLoader extends SwoftComponent
         return [
             Cluster::MANAGER => [
                 'class' => ClusterManager::class,
-                'state' => bean(Cluster::STATE),
-                'serverIdPrefix' => 'swoft_ws_server_cluster_'
+                'state' => bean(Cluster::STATE)
             ],
             Cluster::STATE => [
                 'class' => RedisState::class,
                 'redis' => bean('redis.pool'),
-                'uidHashMapPrefix' => 'swoft_ws_server_cluster:uid',
-                'serverIdHashMapPrefix' => 'swoft_ws_server_cluster:server_',
-                'messageQueuePrefix' => 'swoft_ws_server_cluster:message_',
-                'serverIdsPrefix' => 'swoft_ws_server_cluster:serverids'
+                'serializer' => bean(Cluster::SERIALIZER),
+                'prefix' => 'swoft_ws_server_cluster',
+            ],
+            Cluster::SERIALIZER => [
+                'class' => PhpSerializer::class
             ]
         ];
     }

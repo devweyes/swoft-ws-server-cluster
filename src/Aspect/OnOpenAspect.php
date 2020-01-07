@@ -46,7 +46,7 @@ class OnOpenAspect
         $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
         //映射关系 游客注册
-        $this->clusterManager->getState()->register((int)$args[2]);
+        $this->clusterManager->getState()->register((int)$args[1]);
 
         $result = $proceedingJoinPoint->proceed();
         // After around

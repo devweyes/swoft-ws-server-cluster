@@ -2,12 +2,15 @@
 
 namespace Jcsp\WsCluster\State;
 
+use Jcsp\Queue\Queue;
 use Jcsp\WsCluster\AbstractState;
 use Jcsp\WsCluster\Cluster;
 use Jcsp\WsCluster\ClusterManager;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\Bean\BeanFactory;
 use Swoft\Redis\Pool;
+use Swoft\Serialize\Contract\SerializerInterface;
+use Swoft\Serialize\PhpSerializer;
 use Swoft\Stdlib\Helper\Arr;
 
 class RedisState extends AbstractState
@@ -19,45 +22,43 @@ class RedisState extends AbstractState
     /**
      * @var string
      */
-    private $uidHashMapPrefix = 'swoft_ws_server_cluster:uid';
-    /**
-     * @var string
-     */
-    private $serverIdHashMapPrefix = 'swoft_ws_server_cluster:server_';
-    /**
-     * @var string
-     */
-    private $messageQueuePrefix = 'swoft_ws_server_cluster:message_';
-    /**
-     * @var string
-     */
-    private $serverIdsPrefix = 'swoft_ws_server_cluster:serverids';
+    private $prefix = 'swoft_ws_server_cluster';
+
     /**
      * register uid
      * @param int $fdid
      * @param string|null $uid
      */
-    public function register(int $fdid, string $uid = null): void
+    public function register(int $fdid, string $uid = null): bool
     {
         $value = [$fdid, $this->getServerId()];
         if (!$uid) {
             $uid = $this->getManager()->generateUid();
         }
-        $this->redis->hSet($this->uidHashMapPrefix, $uid, $value);
-        $this->redis->hSet($this->serverIdHashMapPrefix . $this->getServerId(), $fdid, $uid);
+        return $this->redis->eval(
+            LuaScripts::register(),
+            [
+                $this->getPrefix() . ':user',
+                $this->getPrefix() . $this->getServerId() . ':server',
+                (string)$uid,
+                (string)$fdid,
+                $this->getSerializer()->serialize($value)
+            ], 2);
     }
 
     /**
      * logout
      * @param int $fdid
      */
-    public function logout(int $fdid): void
+    public function logout(int $fdid): bool
     {
-        $uid = $this->redis->hGet($this->serverIdHashMapPrefix . $this->getServerId(), $fdid);
-        if ($uid) {
-            $this->redis->hDel($this->serverIdHashMapPrefix . $this->getServerId(), $fdid);
-            $this->redis->hDel($this->uidHashMapPrefix, $uid);
-        }
+        return $this->redis->eval(
+            LuaScripts::register(),
+            [
+                $this->getPrefix() . ':user',
+                $this->getPrefix() . $this->getServerId() . ':server',
+                (string)$fdid
+            ], 2);
     }
 
     /**
@@ -75,13 +76,14 @@ class RedisState extends AbstractState
         $targetFdid = null,
         int $originUid = null,
         int $originFdid = null
-    ): bool {
+    ): bool
+    {
         //transport to all
         if (!$targetUid && !$targetFdid) {
             foreach ($this->getServerIds() as $serverId) {
-                //TODO send queue
+                $queue = $this->getPrefix() . ':message:' . $serverId;
+                Queue::bind($queue)->push([$message, null]);
             }
-
             return true;
         }
 
@@ -91,7 +93,8 @@ class RedisState extends AbstractState
                 if (!is_string($uid)) {
                     continue;
                 }
-                if ($value = $this->redis->hGet($this->uidHashMapPrefix, $uid)) {
+                if ($value = $this->redis->hGet($this->getPrefix() . ':user', $uid)) {
+                    $value = $this->getSerializer()->unserialize($value);
                     if (!is_array($value) || count($value) !== 2) {
                         continue;
                     }
@@ -107,14 +110,17 @@ class RedisState extends AbstractState
         }
 
         //send queue
-        foreach (Arr::except($server, $this->getServerId()) as $server => $fdidArr) {
-            //TODO send queue
+        foreach (Arr::except($server, $this->getServerId()) as $key => $fdidArr) {
+            $queue = $this->getPrefix() . ':message:' . $key;
+            Queue::bind($queue)->push($this->getSerializer()->serialize([$message, $fdidArr]));
         }
 
         //send local fdid
         $fdidArr = Arr::get($server, $this->getServerId());
         //TODO send queue local
-
+        foreach ($fdidArr as $fd) {
+            server()->push($fd, $message);
+        }
 
         //TODO event
         return true;
@@ -125,14 +131,15 @@ class RedisState extends AbstractState
      */
     public function shutdown(): void
     {
-        $this->redis->sRem($this->serverIdsPrefix, $this->getServerId());
+        $this->redis->sRem($this->prefix . ':serverids', $this->getServerId());
     }
+
     /**
      * discover
      */
     public function discover(): void
     {
-        $this->redis->sAdd($this->serverIdsPrefix, $this->getServerId());
+        $this->redis->sAdd($this->prefix . ':serverids', $this->getServerId());
     }
 
     /**
@@ -140,6 +147,26 @@ class RedisState extends AbstractState
      */
     public function getServerIds(): array
     {
-        return $this->redis->sMembers($this->serverIdsPrefix) ?: [];
+        return $this->redis->sMembers($this->prefix . ':serverids') ?: [];
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrefix(): string
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * @return SerializerInterface
+     */
+    public function getSerializer(): SerializerInterface
+    {
+        if (!$this->serializer) {
+            $this->serializer = new PhpSerializer();
+        }
+
+        return $this->serializer;
     }
 }

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Jcsp\WsCluster;
 
@@ -9,13 +9,13 @@ interface StateInterface
      * @param int $fdid
      * @param string|null $uid
      */
-    public function register(int $fdid, string $uid = null): void;
+    public function register(int $fdid, string $uid = null): bool;
 
     /**
      * logout
      * @param int $fdid
      */
-    public function logout(int $fdid): void;
+    public function logout(int $fdid): bool;
 
     /**
      * transport message

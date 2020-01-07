@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Jcsp\WsCluster;
 
-use Jcsp\WsCluster\Helper\Str;
+use Jcsp\WsCluster\Helper\Tool;
 use Swoft\Bean\BeanFactory;
 use Swoft\Stdlib\Helper\StringHelper;
 
@@ -19,7 +19,7 @@ class ClusterManager
     /**
      * @var string
      */
-    private $serverIdPrefix = 'swoft_ws_server_cluster_';
+    private $serverIdPrefix = 'server_';
     /**
      * @var string
      */
@@ -66,6 +66,6 @@ class ClusterManager
      */
     public function generateUid(): string
     {
-        return Str::uniqidReal();
+        return Tool::uniqidReal();
     }
 }
