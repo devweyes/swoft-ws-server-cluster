@@ -2,6 +2,7 @@
 
 namespace Jcsp\WsCluster\Aspect;
 
+use Jcsp\WsCluster\Cluster;
 use Jcsp\WsCluster\ClusterManager;
 use Swoft\Aop\Annotation\Mapping\After;
 use Swoft\Aop\Annotation\Mapping\AfterReturning;
@@ -42,14 +43,32 @@ class OnHandshakeAspect
     public function around(ProceedingJoinPoint $proceedingJoinPoint)
     {
         // Before around
-        $className = $proceedingJoinPoint->getClassName();
-        $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
-        //TODO 中间键逻辑处理
+        $middlewares = Cluster::getOnHandshakeMiddleware();
 
+        reset($middlewares);
+        while ($middleware = current($middlewares)) {
+            $result = $middleware->before(...$args);
+            [$status, $response] = $result;
+            if($status === false) {
+                return [$status, $response];
+            }
+            $args = [$args[0], $response];
+            next($middlewares);
+        }
         $result = $proceedingJoinPoint->proceed();
         // After around
-
+        reset($middlewares);
+        $middlewares = array_reverse($middlewares);
+        while ($middleware = current($middlewares)) {
+            $result = $middleware->after(...$args);
+            [$status, $response] = $result;
+            if($status === false) {
+                return [$status, $response];
+            }
+            $args = [$args[0], $response];
+            next($middlewares);
+        }
         return $result;
     }
 }

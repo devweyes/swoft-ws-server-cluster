@@ -28,14 +28,20 @@ abstract class AbstractState implements StateInterface
      * @param int|null $originFdid
      * @return bool
      */
-    abstract public function transport(
-        string $message,
-        $targetUid = null,
-        $targetFdid = null,
-        int $originUid = null,
-        int $originFdid = null
-    ): bool;
+    abstract public function transport(string $message, $uid = null): bool;
 
+    /**
+     * @param string $message
+     * @param mixed ...$uid
+     * @return bool
+     */
+    abstract public function transportToUid(string $message, ...$uid): bool;
+
+    /**
+     * @param string $message
+     * @return bool
+     */
+    abstract public function transportToAll(string $message): bool;
     /**
      * shutdown
      */
@@ -57,6 +63,17 @@ abstract class AbstractState implements StateInterface
     public function getServerId(): string
     {
         return $this->getManager()->getServerId();
+    }
+
+    /**
+     * send to some
+     * @param string $message
+     * @param mixed ...$uid
+     * @return int
+     */
+    public function transportToFd(string $message, ...$uid): int
+    {
+        return server()->sendToSome($message, (array)$fd);
     }
 
     /**

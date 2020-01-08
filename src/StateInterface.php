@@ -18,29 +18,35 @@ interface StateInterface
     public function logout(int $fdid): bool;
 
     /**
-     * transport message
      * @param string $message
-     * @param null $targetUid
-     * @param null $targetFdid
-     * @param int|null $originUid
-     * @param int|null $originFdid
+     * @param null $uid
      * @return bool
      */
-    public function transport(
-        string $message,
-        $targetUid = null,
-        $targetFdid = null,
-        int $originUid = null,
-        int $originFdid = null
-    ): bool;
+    public function transport(string $message, $uid = null): bool;
+
+    /**
+     * @param string $message
+     * @param mixed ...$uid
+     * @return bool
+     */
+    public function transportToUid(string $message, ...$uid): bool;
+
+    /**
+     * @param string $message
+     * @return bool
+     */
+    public function transportToAll(string $message): bool;
+
     /**
      * shutdown
      */
     public function shutdown(): void;
+
     /**
      * discover
      */
     public function discover(): void;
+
     /**
      * @return array
      */

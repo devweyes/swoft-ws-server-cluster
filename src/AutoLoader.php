@@ -2,6 +2,8 @@
 
 namespace Jcsp\WsCluster;
 
+use Jcsp\WsCluster\Middleware\DefaultAuthMiddleware;
+use Jcsp\WsCluster\Middleware\DefaultAllowMiddleware;
 use Jcsp\WsCluster\State\RedisState;
 use Swoft\Console\Application;
 use Swoft\Console\ConsoleDispatcher;
@@ -58,7 +60,13 @@ final class AutoLoader extends SwoftComponent
         return [
             Cluster::MANAGER => [
                 'class' => ClusterManager::class,
-                'state' => bean(Cluster::STATE)
+                'state' => bean(Cluster::STATE),
+                'onHandshakeMiddleware' => [
+                    bean(DefaultAllowMiddleware::class)
+                ],
+                'onOpenMiddleware' => [
+                    bean(DefaultAuthMiddleware::class)
+                ]
             ],
             Cluster::STATE => [
                 'class' => RedisState::class,

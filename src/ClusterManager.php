@@ -2,6 +2,9 @@
 
 namespace Jcsp\WsCluster;
 
+use BadMethodCallException;
+use Jcsp\WsCluster\Middleware\AbstractOpenMiddleware;
+use Jcsp\WsCluster\Middleware\AbstracHandshakeMiddleware;
 use Jcsp\WsCluster\Helper\Tool;
 use Swoft\Bean\BeanFactory;
 use Swoft\Stdlib\Helper\StringHelper;
@@ -16,6 +19,14 @@ class ClusterManager
      * @var StateInterface
      */
     private $state;
+    /**
+     * @var AbstractOpenMiddleware[]
+     */
+    private $onOpenMiddleware = [];
+    /**
+     * @var AbstracHandshakeMiddleware[]
+     */
+    private $onHandshakeMiddleware = [];
     /**
      * @var string
      */
@@ -53,19 +64,38 @@ class ClusterManager
         return BeanFactory::getBean(Cluster::STATE);
     }
     /**
-     * get serverids.
-     * @return array
-     */
-    public function getServerIds(): array
-    {
-        return $this->getState()->getServerIds();
-    }
-
-    /**
      * @return string
      */
     public function generateUid(): string
     {
         return Tool::uniqidReal();
+    }
+
+    /**
+     * @return AbstractOpenMiddleware[]
+     */
+    public function getOnOpenMiddleware()
+    {
+        return $this->onOpenMiddleware;
+    }
+
+    /**
+     * @return AbstracHandshakeMiddleware[]
+     */
+    public function getOnHandshakeMiddleware()
+    {
+        return $this->onHandshakeMiddleware;
+    }
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        if (!method_exists($this->getState(), $name)) {
+            throw new BadMethodCallException(sprintf('method:%s not found', $name));
+        }
+        return $this->getState()->$name(...$arguments);
     }
 }

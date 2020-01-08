@@ -31,10 +31,11 @@ class RedisState extends AbstractState
      */
     public function register(int $fdid, string $uid = null): bool
     {
-        $value = [$fdid, $this->getServerId()];
         if (!$uid) {
             $uid = $this->getManager()->generateUid();
         }
+        $value = $fdid . '|' . $this->getServerId();
+        $value2 = $fdid . '|' . $this->getServerId();
         return $this->redis->eval(
             LuaScripts::register(),
             [
@@ -42,7 +43,8 @@ class RedisState extends AbstractState
                 $this->getPrefix() . $this->getServerId() . ':server',
                 (string)$uid,
                 (string)$fdid,
-                $this->getSerializer()->serialize($value)
+                $value,
+                $value2
             ], 2);
     }
 
@@ -62,64 +64,60 @@ class RedisState extends AbstractState
     }
 
     /**
-     * transport message
      * @param string $message
-     * @param null $targetUid
-     * @param null $targetFdid
-     * @param int|null $originUid
-     * @param int|null $originFdid
+     * @param null $uid
      * @return bool
      */
-    public function transport(
-        string $message,
-        $targetUid = null,
-        $targetFdid = null,
-        int $originUid = null,
-        int $originFdid = null
-    ): bool
+    public function transport(string $message, $uid = null): bool
     {
-        //transport to all
-        if (!$targetUid && !$targetFdid) {
-            foreach ($this->getServerIds() as $serverId) {
-                $queue = $this->getPrefix() . ':message:' . $serverId;
-                Queue::bind($queue)->push([$message, null]);
-            }
-            return true;
+        if (is_null($uid)) {
+            return transportToAll($message);
         }
+        return $this->transportToUid($message, (array)$uid);
+    }
 
-        //transport to uid
-        if ($targetUid) {
-            foreach ((array)$targetUid as $uid) {
-                if (!is_string($uid)) {
+    /**
+     * @param string $message
+     * @return bool
+     */
+    public function transportToAll(string $message): bool
+    {
+        foreach ($this->getServerIds() as $serverId) {
+            $queue = $this->getPrefix() . ':message:' . $serverId;
+            Queue::bind($queue)->push([$message, null]);
+        }
+        return true;
+    }
+
+    /**
+     * @param string $message
+     * @param mixed ...$uid
+     * @return bool
+     */
+    public function transportToUid(string $message, ...$uid): bool
+    {
+        $server = [];
+        foreach ((array)$uid as $id) {
+            if ($value = $this->redis->hGet($this->getPrefix() . ':user', (string)$id)) {
+                $value = $this->getSerializer()->unserialize($value);
+                if (!is_array($value) || count($value) !== 2) {
                     continue;
                 }
-                if ($value = $this->redis->hGet($this->getPrefix() . ':user', $uid)) {
-                    $value = $this->getSerializer()->unserialize($value);
-                    if (!is_array($value) || count($value) !== 2) {
-                        continue;
-                    }
-                    $server[$value[1]][] = $value[2];
-                }
+                [$serverId, $fd] = $value;
+                $server[$serverId][] = $fd;
             }
         }
-        //transport to fdid .local
-        if ($targetFdid) {
-            foreach ((array)$targetFdid as $fdid) {
-                $server[$this->getServerId()][] = $fdid;
-            }
-        }
-
         //send queue
-        foreach (Arr::except($server, $this->getServerId()) as $key => $fdidArr) {
+        foreach (Arr::except($server, $this->getServerId()) as $key => $fds) {
             $queue = $this->getPrefix() . ':message:' . $key;
-            Queue::bind($queue)->push($this->getSerializer()->serialize([$message, $fdidArr]));
+            Queue::bind($queue)->push($this->getSerializer()->serialize([$message, $fds]));
         }
 
         //send local fdid
-        $fdidArr = Arr::get($server, $this->getServerId());
+        $fds = Arr::get($server, $this->getServerId());
         //TODO send queue local
-        foreach ($fdidArr as $fd) {
-            server()->push($fd, $message);
+        foreach ($fds as $fd) {
+            server()->sendTo($fd, $message);
         }
 
         //TODO event

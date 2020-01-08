@@ -2,7 +2,7 @@
 
 namespace Jcsp\WsCluster\Aspect;
 
-use Jcsp\WsCluster\ClusterManager;
+use Jcsp\WsCluster\Cluster;
 use Swoft\Aop\Annotation\Mapping\After;
 use Swoft\Aop\Annotation\Mapping\AfterReturning;
 use Swoft\Aop\Annotation\Mapping\AfterThrowing;
@@ -28,11 +28,6 @@ use Swoft\WebSocket\Server\Annotation\Mapping\OnOpen;
 class OnOpenAspect
 {
     /**
-     * @Inject()
-     * @var ClusterManager
-     */
-    private $clusterManager;
-    /**
      * @Around()
      *
      * @param ProceedingJoinPoint $proceedingJoinPoint
@@ -42,14 +37,22 @@ class OnOpenAspect
     public function around(ProceedingJoinPoint $proceedingJoinPoint)
     {
         // Before around
-        $className = $proceedingJoinPoint->getClassName();
-        $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
-        //映射关系 游客注册
-        $this->clusterManager->getState()->register((int)$args[1]);
+        $middlewares = Cluster::getOnOpenMiddleware();
 
+        reset($middlewares);
+        while ($middleware = current($middlewares)) {
+            $middleware->before(...$args);
+            next($middlewares);
+        }
         $result = $proceedingJoinPoint->proceed();
         // After around
+        reset($middlewares);
+        $middlewares = array_reverse($middlewares);
+        while ($middleware = current($middlewares)) {
+            $middleware->after(...$args);
+            next($middlewares);
+        }
         return $result;
     }
 }

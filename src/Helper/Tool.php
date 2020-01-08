@@ -7,6 +7,11 @@ use Swoft\Bean\BeanFactory;
 
 class Tool
 {
+    /**
+     * @param int $lenght
+     * @return bool|string
+     * @throws Exception
+     */
     public static function uniqidReal($lenght = 13)
     {
         // uniqid gives 13 chars, but you could adjust it to your needs.
@@ -32,7 +37,6 @@ class Tool
         for ($i = 1; $i <= $num; $i++) {
             $class["$name:$i"] = $process;
         }
-        d('class', $num, $class);
 
         return $class;
     }

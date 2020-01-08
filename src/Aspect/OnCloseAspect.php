@@ -2,7 +2,7 @@
 
 namespace Jcsp\WsCluster\Aspect;
 
-use Jcsp\WsCluster\ClusterManager;
+use Jcsp\WsCluster\Cluster;
 use Swoft\Aop\Annotation\Mapping\After;
 use Swoft\Aop\Annotation\Mapping\AfterReturning;
 use Swoft\Aop\Annotation\Mapping\AfterThrowing;
@@ -28,11 +28,6 @@ use Swoft\WebSocket\Server\Annotation\Mapping\OnClose;
 class OnCloseAspect
 {
     /**
-     * @Inject()
-     * @var ClusterManager
-     */
-    private $clusterManager;
-    /**
      * @Around()
      *
      * @param ProceedingJoinPoint $proceedingJoinPoint
@@ -46,7 +41,7 @@ class OnCloseAspect
         $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
         //ap删除fdid
-        $this->clusterManager->getState()->logout((int)$args[1]);
+        Cluster::logout((int)$args[1]);
 
         $result = $proceedingJoinPoint->proceed();
         // After around

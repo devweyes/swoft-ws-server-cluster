@@ -6,6 +6,7 @@ use Jcsp\Queue\Annotation\Mapping\Pull;
 use Jcsp\Queue\Result;
 use Jcsp\WsCluster\Cluster;
 use Jcsp\WsCluster\State\RedisState;
+use Jcsp\WsCluster\StateInterface;
 use Swoft\Bean\Annotation\Mapping\Bean;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\Bean\BeanFactory;
@@ -22,6 +23,9 @@ use Jcsp\Queue\Contract\UserProcess;
  */
 class RecvMessageProcess extends UserProcess
 {
+    /**
+     * @var StateInterface
+     */
     private $state;
 
     public function init()
@@ -35,7 +39,6 @@ class RecvMessageProcess extends UserProcess
      */
     public function run(Process $process): void
     {
-        d('start');
         /** @var RedisState $redisState */
         $redisState = BeanFactory::getBean(Cluster::STATE);
         //add queue
@@ -53,15 +56,15 @@ class RecvMessageProcess extends UserProcess
         $message = $this->state->getSerializer()->unserialize($message);
         if (is_array($message) && count($message) === 2) {
             [$content, $fd] = $message;
+            $server = server();
             if (is_null($fd)) {
-                server()->sendToAll($message);
+                $server->sendToAll($message);
             }
             if (is_array($fd)) {
                 foreach ($fd as $id) {
-                    server()->push((int)$id, $content);
+                    $server->sendTo((int)$id, $content);
                 }
             }
-
         }
         return Result::ACK;
     }
