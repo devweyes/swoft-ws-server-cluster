@@ -90,6 +90,7 @@ class RedisState extends AbstractState
      */
     public function transportToAll(string $message): bool
     {
+    	d('发消息给所有', $this->getServerIds(),$this->getServerId());
         foreach ($this->getServerIds() as $serverId) {
             $queue = $this->getPrefix() . ':message:' . $serverId;
             Queue::bind($queue)->push([$message, null]);
