@@ -107,9 +107,9 @@ class RedisState extends AbstractState
                 $server[$serverId][] = (int)$fd;
             }
         }
-        d($server, $this->getServerId(),222);
+        d($server, $this->getServerId(), 222);
         //send queue
-        foreach (Arr::only($server, $this->getServerId()) as $key => $fds) {
+        foreach (Arr::except($server, $this->getServerId()) as $key => $fds) {
             $queue = $this->getPrefix() . ':message:' . $key;
             Queue::bind($queue)->push($this->getSerializer()->serialize([$message, $fds]));
         }
