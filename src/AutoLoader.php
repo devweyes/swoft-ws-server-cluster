@@ -66,7 +66,8 @@ final class AutoLoader extends SwoftComponent
                 ],
                 'onOpenMiddleware' => [
                     bean(DefaultAuthMiddleware::class)
-                ]
+                ],
+                'heartbeat' => 10
             ],
             Cluster::STATE => [
                 'class' => RedisState::class,

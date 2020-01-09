@@ -12,6 +12,14 @@ use Swoft\Stdlib\Helper\StringHelper;
 /**
  * Class ClusterManager
  * @package Jcsp\WsCluster
+ * @method  bool register(int $fdid, string $uid = null)
+ * @method  bool logout(int $fdid)
+ * @method  bool transport(string $message, $uid = null)
+ * @method  bool transportToUid(string $message, ...$uid)
+ * @method  bool transportToAll(string $message)
+ * @method void shutdown()
+ * @method  void discover()
+ * @method  array getServerIds()
  */
 class ClusterManager
 {
@@ -35,6 +43,10 @@ class ClusterManager
      * @var string
      */
     private $serverId;
+    /**
+     * @var int 
+     */
+    private $heartbeat = 60;
 
     /**
      * init
@@ -86,6 +98,15 @@ class ClusterManager
     {
         return $this->onHandshakeMiddleware;
     }
+
+    /**
+     * @return int
+     */
+    public function getHeartbeat(): int
+    {
+        return $this->heartbeat;
+    }
+
     /**
      * @param $name
      * @param $arguments

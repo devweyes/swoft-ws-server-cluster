@@ -90,8 +90,7 @@ class RedisState extends AbstractState
      */
     public function transportToAll(string $message): bool
     {
-    	d('发消息给所有', $this->getServerIds(),$this->getServerId());
-        foreach ($this->getServerIds() as $serverId) {
+        foreach ($this->getServerIds() as $serverId => $score) {
             $queue = $this->getPrefix() . ':message:' . $serverId;
             Queue::bind($queue)->push([$message, null]);
         }
@@ -116,7 +115,6 @@ class RedisState extends AbstractState
                 $server[$serverId][] = (int)$fd;
             }
         }
-        d($server, $this->getServerId(), 222);
         //send queue
         foreach (Arr::except($server, $this->getServerId()) as $key => $fds) {
             $queue = $this->getPrefix() . ':message:' . $key;
@@ -137,9 +135,10 @@ class RedisState extends AbstractState
     /**
      * shutdown
      */
-    public function shutdown(): void
+    public function shutdown(string $serverId = null): void
     {
-        $this->redis->sRem($this->prefix . ':serverids', $this->getServerId());
+        $serverId = $serverId ? : $this->getServerId();
+        $this->redis->zRem($this->prefix . ':serverids', $serverId);
     }
 
     /**
@@ -147,7 +146,7 @@ class RedisState extends AbstractState
      */
     public function discover(): void
     {
-        $this->redis->sAdd($this->prefix . ':serverids', $this->getServerId());
+        $this->redis->zAdd($this->prefix . ':serverids', [$this->getServerId() => time()]);
     }
 
     /**
@@ -155,7 +154,7 @@ class RedisState extends AbstractState
      */
     public function getServerIds(): array
     {
-        return $this->redis->sMembers($this->prefix . ':serverids') ?: [];
+        return $this->redis->zRevRange($this->prefix . ':serverids',0, -1,true);
     }
 
     /**

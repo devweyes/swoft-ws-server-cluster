@@ -37,7 +37,6 @@ class Cluster
         $cacheManager = self::manager();
         return $cacheManager->{$method}(...$arguments);
     }
-
     /**
      * @return mixed|object|string
      */

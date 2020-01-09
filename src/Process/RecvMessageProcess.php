@@ -5,8 +5,7 @@ namespace Jcsp\WsCluster\Process;
 use Jcsp\Queue\Annotation\Mapping\Pull;
 use Jcsp\Queue\Result;
 use Jcsp\WsCluster\Cluster;
-use Jcsp\WsCluster\State\RedisState;
-use Jcsp\WsCluster\StateInterface;
+use Jcsp\WsCluster\ClusterManager;
 use Swoft\Bean\Annotation\Mapping\Bean;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\Bean\BeanFactory;
@@ -14,6 +13,9 @@ use Swoft\Db\Exception\DbException;
 use Swoft\Log\Helper\CLog;
 use Swoft\Process\Process;
 use Jcsp\Queue\Contract\UserProcess;
+use Swoft\Stdlib\Helper\Arr;
+use Swoft\Timer;
+use function foo\func;
 
 /**
  * Class MonitorProcess
@@ -25,13 +27,13 @@ use Jcsp\Queue\Contract\UserProcess;
 class RecvMessageProcess extends UserProcess
 {
     /**
-     * @var StateInterface
+     * @var ClusterManager
      */
-    private $state;
+    private $clusterManager;
 
     public function init()
     {
-        $this->state = BeanFactory::getBean(Cluster::STATE);
+        $this->clusterManager = BeanFactory::getBean(Cluster::MANAGER);
     }
 
     /**
@@ -40,6 +42,7 @@ class RecvMessageProcess extends UserProcess
      */
     public function run(Process $process): void
     {
+        $this->heartbeat();
         /** @var RedisState $redisState */
         $redisState = BeanFactory::getBean(Cluster::STATE);
         //add queue
@@ -48,14 +51,31 @@ class RecvMessageProcess extends UserProcess
     }
 
     /**
+     * 心跳检测 互相检测
+     * @throws \Swoft\Exception\SwoftException
+     */
+    protected function heartbeat()
+    {
+        $timeout = $this->clusterManager->getHeartbeat();
+        Timer::tick(1000 * $timeout, function() use ($timeout) {
+            //更新时间
+            $this->clusterManager->discover();
+            //检测其他机器
+            $otherServer = Arr::except($this->clusterManager->getServerIds(), $this->clusterManager->getServerId());
+            foreach ($otherServer as $server => $time) {
+                if($time < time() - 2 * $timeout) {
+                    $this->clusterManager->shutdown($server);
+                }
+            }
+        });
+    }
+    /**
      * customer
      * @param $message
      * @return string
      */
     public function receive($message): string
     {
-//        $message = $this->state->getSerializer()->unserialize($message);
-        d('收消息', $message);
         if (is_array($message) && count($message) === 2) {
             [$content, $fd] = $message;
             $server = server();
@@ -78,8 +98,8 @@ class RecvMessageProcess extends UserProcess
      * @param $message
      * @return string
      */
-    public function fallback(\Throwable $throwable): void
+    public function fallback(\Throwable $throwable, int $retry): void
     {
-        d($throwable);
+        vdump('error', $throwable->getMessage(), $retry);
     }
 }
