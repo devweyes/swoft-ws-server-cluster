@@ -54,6 +54,7 @@ class RecvMessageProcess extends UserProcess
     public function receive($message): string
     {
         $message = $this->state->getSerializer()->unserialize($message);
+        d('收消息', $message);
         if (is_array($message) && count($message) === 2) {
             [$content, $fd] = $message;
             $server = server();
