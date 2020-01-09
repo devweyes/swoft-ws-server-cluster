@@ -19,7 +19,7 @@ class DefaultAuthMiddleware extends AbstractOpenMiddleware
      */
     public function before(Request $request, int $fd):void
     {
-        $auth = $request->getHeaderLine('auth');
+        $auth = $request->getHeaderLine('sec-websocket-protocol');
         if ($auth) {
             Cluster::register($fd, $this->decodeToken($auth));
         }
