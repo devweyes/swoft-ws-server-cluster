@@ -54,19 +54,19 @@ class RecvMessageProcess extends UserProcess
      */
     public function receive($message): string
     {
-        $message = $this->state->getSerializer()->unserialize($message);
+//        $message = $this->state->getSerializer()->unserialize($message);
         d('收消息', $message);
         if (is_array($message) && count($message) === 2) {
             [$content, $fd] = $message;
             $server = server();
             if ($fd === null) {
-                $server->sendToAll($message);
-                //CLog::debug('ws receive message by cluster message:%s all', $content);
+                $server->sendToAll($content);
+                CLog::debug('ws receive message by cluster message:%s all', $content);
             }
             if (is_array($fd)) {
                 foreach ($fd as $id) {
                     $server->sendTo((int)$id, $content);
-                    //CLog::debug('ws receive message by cluster message:%s fd:%s', $content, $id);
+                    CLog::debug('ws receive message by cluster message:%s fd:%s', $content, $id);
                 }
             }
         }
