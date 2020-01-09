@@ -17,6 +17,7 @@ use Swoft\Aop\Point\ProceedingJoinPoint;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\WebSocket\Server\Annotation\Mapping\OnMessage;
 use Swoft\WebSocket\Server\Context\WsMessageContext;
+use Swoole\WebSocket\Frame;
 
 /**
  * Class OnMessageAspect
@@ -42,12 +43,10 @@ class OnMessageAspect
         $className = $proceedingJoinPoint->getClassName();
         $methodName = $proceedingJoinPoint->getMethod();
         $args = $proceedingJoinPoint->getArgs();
+        /** @var Frame $frame */
+        $frame = $args[1];
         //收消息消息事件
-        /** @var WsMessageContext $context */
-        $context = context();
-        if($context instanceof WsMessageContext) {
-            Event::recvMessage(Cluster::getServerId(), $context->getFd(), $context->getMessage());
-        }
+        Event::recvMessage(Cluster::getServerId(), $frame->fd, $frame->data);
         $result = $proceedingJoinPoint->proceed();
         // After around
 
