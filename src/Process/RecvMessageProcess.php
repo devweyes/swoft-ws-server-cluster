@@ -11,6 +11,7 @@ use Swoft\Bean\Annotation\Mapping\Bean;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\Bean\BeanFactory;
 use Swoft\Db\Exception\DbException;
+use Swoft\Log\Helper\CLog;
 use Swoft\Process\Process;
 use Jcsp\Queue\Contract\UserProcess;
 
@@ -54,16 +55,17 @@ class RecvMessageProcess extends UserProcess
     public function receive($message): string
     {
         $message = $this->state->getSerializer()->unserialize($message);
-        d('收消息', $message);
         if (is_array($message) && count($message) === 2) {
             [$content, $fd] = $message;
             $server = server();
-            if (is_null($fd)) {
+            if ($fd === null) {
                 $server->sendToAll($message);
+                CLog::debug('ws receive message by cluster message:%s all', $message);
             }
             if (is_array($fd)) {
                 foreach ($fd as $id) {
                     $server->sendTo((int)$id, $content);
+                    CLog::debug('ws receive message by cluster message:%s fd:%s', $message, $id);
                 }
             }
         }

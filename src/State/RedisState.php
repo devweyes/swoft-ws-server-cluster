@@ -23,6 +23,10 @@ class RedisState extends AbstractState
      * @var string
      */
     private $prefix = 'swoft_ws_server_cluster';
+    /**
+     * @var SerializerInterface
+     */
+    private $serializer;
 
     /**
      * register uid
@@ -45,7 +49,9 @@ class RedisState extends AbstractState
                 (string)$fdid,
                 $value,
                 $value2
-            ], 2);
+            ],
+            2
+        );
     }
 
     /**
@@ -60,7 +66,9 @@ class RedisState extends AbstractState
                 $this->getPrefix() . ':user',
                 $this->getPrefix() . $this->getServerId() . ':server',
                 (string)$fdid
-            ], 2);
+            ],
+            2
+        );
     }
 
     /**
