@@ -9,9 +9,21 @@
 
 使用前请通读[Swot webdocket Server文档](https://www.swoft.org/documents/v2/core-components/websocket)，配置习惯与其并无任何变化。
 
+流程请参见下图
+
+![avatar](./ws.jpg)
+
+- ① 客户端发起握手请求并建立连接
+- ② 当前服务端向资源管理State注册并绑定当前用户信息
+- ③ 服务端A向服务B所在消息队列推送消息
+- ④ 服务端B消费消息并接收
+- ⑤ 服务端B向客户端推送消息
+
+
 2\. 特性
 ----------------
 - 高性能，水平扩容
+- 高可用，所有机器都为master，相互心跳检测
 - 消息队列与状态管理均采用适配器模式，默认均为redis驱动，拓展性强
 - 事件均采用Aop切面技术,无感知，解耦
 - 与原```Swoft Webdocket```使用起来基本一致，习惯保持
@@ -53,7 +65,8 @@ composer require devweyes/ws-server-cluster
                 ],
                 'onOpenMiddleware' => [ //onOpen阶段中间键
                     bean(DefaultAuthMiddleware::class)
-                ]
+                ],
+                'heartbeat' => 60 //服务器心跳检测，相互检测
             ],
             Cluster::STATE => [ //状态保存配置
                 'class' => RedisState::class,
@@ -111,8 +124,7 @@ bean.php添加消息控制器中间键（```如有用到消息控制器，此选
 - 如需阻断，则需```return [false, $response]```,```$response```可垮中间键传输
 
 
-
-内置用户绑定处理器，替换一般需实现```Cluster::register```用于用户绑定
+简单默认示例
 
 ```php
 <?php
@@ -163,7 +175,7 @@ class DefaultAllowMiddleware extends AbstracHandshakeMiddleware
 
 
 
-内置用户绑定处理器，替换一般需实现```Cluster::register```用于用户绑定
+内置用户绑定中间键，替换一般需实现```Cluster::register```用于用户绑定
 
 ```php
 <?php
@@ -230,3 +242,7 @@ Cluster::transportToAll(string $message)
 
 消息接收
 Jcsp\WsCluster\Event::RECV_MESSAGE
+
+
+
+

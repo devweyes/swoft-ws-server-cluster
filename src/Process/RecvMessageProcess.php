@@ -31,7 +31,7 @@ class RecvMessageProcess extends UserProcess
      */
     private $clusterManager;
 
-    public function init()
+    public function init(): void
     {
         $this->clusterManager = BeanFactory::getBean(Cluster::MANAGER);
     }
@@ -54,16 +54,16 @@ class RecvMessageProcess extends UserProcess
      * 心跳检测 互相检测
      * @throws \Swoft\Exception\SwoftException
      */
-    protected function heartbeat()
+    protected function heartbeat(): void
     {
         $timeout = $this->clusterManager->getHeartbeat();
-        Timer::tick(1000 * $timeout, function() use ($timeout) {
+        Timer::tick(1000 * $timeout, function () use ($timeout) {
             //更新时间
             $this->clusterManager->discover();
             //检测其他机器
             $otherServer = Arr::except($this->clusterManager->getServerIds(), $this->clusterManager->getServerId());
             foreach ($otherServer as $server => $time) {
-                if($time < time() - 2 * $timeout) {
+                if ($time < time() - 2 * $timeout) {
                     $this->clusterManager->shutdown($server);
                 }
             }

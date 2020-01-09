@@ -19,10 +19,10 @@ class DefaultAllowMiddleware extends AbstracHandshakeMiddleware
      */
     public function before(Request $request, Response $response): array
     {
-        if(!$request->getHeaderLine('auth')) {
+        if (!$request->getHeaderLine('auth')) {
             //return [false, $response];
         }
-        return [true, $response->withAttribute('allow','true')];
+        return [true, $response->withAttribute('allow', 'true')];
     }
     /**
      * @param Request $request

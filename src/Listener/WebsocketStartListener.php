@@ -26,7 +26,7 @@ class WebsocketStartListener implements EventHandlerInterface
      */
     public function handle(EventInterface $event): void
     {
-        if($event->getTarget() instanceof WebSocketServer) {
+        if ($event->getTarget() instanceof WebSocketServer) {
             Cluster::discover();
         }
     }
