@@ -61,12 +61,12 @@ class RecvMessageProcess extends UserProcess
             $server = server();
             if ($fd === null) {
                 $server->sendToAll($message);
-                //CLog::debug('ws receive message by cluster message:%s all', $message);
+                //CLog::debug('ws receive message by cluster message:%s all', $content);
             }
             if (is_array($fd)) {
                 foreach ($fd as $id) {
                     $server->sendTo((int)$id, $content);
-                    //CLog::debug('ws receive message by cluster message:%s fd:%s', $message, $id);
+                    //CLog::debug('ws receive message by cluster message:%s fd:%s', $content, $id);
                 }
             }
         }

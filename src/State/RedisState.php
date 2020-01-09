@@ -79,7 +79,7 @@ class RedisState extends AbstractState
     public function transport(string $message, $uid = null): bool
     {
         if (is_null($uid)) {
-            return transportToAll($message);
+            return $this->transportToAll($message);
         }
         return $this->transportToUid($message, (array)$uid);
     }
