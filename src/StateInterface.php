@@ -29,7 +29,7 @@ interface StateInterface
      * @param mixed ...$uid
      * @return bool
      */
-    public function transportToUid(string $message, ...$uid): bool;
+    public function transportToUid(string $message, $uid): bool;
 
     /**
      * @param string $message

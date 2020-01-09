@@ -35,7 +35,7 @@ class RedisState extends AbstractState
             $uid = $this->getManager()->generateUid();
         }
         $value = $fdid . '|' . $this->getServerId();
-        $value2 = $fdid . '|' . $this->getServerId();
+        $value2 = $uid . '|' . $this->getServerId();
         return $this->redis->eval(
             LuaScripts::register(),
             [
@@ -94,21 +94,22 @@ class RedisState extends AbstractState
      * @param mixed ...$uid
      * @return bool
      */
-    public function transportToUid(string $message, ...$uid): bool
+    public function transportToUid(string $message, $uid): bool
     {
         $server = [];
         foreach ((array)$uid as $id) {
             if ($value = $this->redis->hGet($this->getPrefix() . ':user', (string)$id)) {
-                $value = $this->getSerializer()->unserialize($value);
+                $value = explode('|', $value);
                 if (!is_array($value) || count($value) !== 2) {
                     continue;
                 }
-                [$serverId, $fd] = $value;
-                $server[$serverId][] = $fd;
+                [$fd, $serverId] = $value;
+                $server[$serverId][] = (int)$fd;
             }
         }
+        d($server, $this->getServerId(),222);
         //send queue
-        foreach (Arr::except($server, $this->getServerId()) as $key => $fds) {
+        foreach (Arr::only($server, $this->getServerId()) as $key => $fds) {
             $queue = $this->getPrefix() . ':message:' . $key;
             Queue::bind($queue)->push($this->getSerializer()->serialize([$message, $fds]));
         }

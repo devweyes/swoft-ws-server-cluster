@@ -35,7 +35,7 @@ abstract class AbstractState implements StateInterface
      * @param mixed ...$uid
      * @return bool
      */
-    abstract public function transportToUid(string $message, ...$uid): bool;
+    abstract public function transportToUid(string $message, $uid): bool;
 
     /**
      * @param string $message
