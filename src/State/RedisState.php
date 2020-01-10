@@ -6,6 +6,7 @@ use Jcsp\Queue\Queue;
 use Jcsp\WsCluster\AbstractState;
 use Jcsp\WsCluster\Cluster;
 use Jcsp\WsCluster\ClusterManager;
+use Jcsp\WsCluster\Event;
 use Swoft\Bean\Annotation\Mapping\Inject;
 use Swoft\Bean\BeanFactory;
 use Swoft\Redis\Pool;
@@ -40,7 +41,7 @@ class RedisState extends AbstractState
         }
         $value = $fdid . '|' . $this->getServerId();
         $value2 = $uid . '|' . $this->getServerId();
-        return $this->redis->eval(
+        $result = $this->redis->eval(
             LuaScripts::register(),
             [
                 $this->getPrefix() . ':user',
@@ -52,6 +53,8 @@ class RedisState extends AbstractState
             ],
             2
         );
+        Event::register($this->getServerId(), $fdid, $uid);
+        return $result;
     }
 
     /**
@@ -60,7 +63,7 @@ class RedisState extends AbstractState
      */
     public function logout(int $fdid): bool
     {
-        return $this->redis->eval(
+        $result = $this->redis->eval(
             LuaScripts::register(),
             [
                 $this->getPrefix() . ':user',
@@ -69,6 +72,8 @@ class RedisState extends AbstractState
             ],
             2
         );
+        Event::logout($this->getServerId(), $fdid);
+        return $result;
     }
 
     /**
@@ -127,8 +132,6 @@ class RedisState extends AbstractState
         foreach ($fds as $fd) {
             server()->sendTo($fd, $message);
         }
-
-        //TODO event
         return true;
     }
 
@@ -139,6 +142,7 @@ class RedisState extends AbstractState
     {
         $serverId = $serverId ? : $this->getServerId();
         $this->redis->zRem($this->prefix . ':serverids', $serverId);
+        Event::shutdown($this->getServerId());
     }
 
     /**
@@ -147,6 +151,7 @@ class RedisState extends AbstractState
     public function discover(): void
     {
         $this->redis->zAdd($this->prefix . ':serverids', [$this->getServerId() => time()]);
+        Event::discover($this->getServerId());
     }
 
     /**

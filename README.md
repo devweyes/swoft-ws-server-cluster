@@ -11,7 +11,7 @@
 
 流程请参见下图
 
-![avatar](./ws.jpg)
+![avatar](ws.jpg)
 
 - ① 客户端发起握手请求并建立连接
 - ② 当前服务端向资源管理State注册并绑定当前用户信息
@@ -114,6 +114,10 @@ bean.php添加消息控制器中间键（```如有用到消息控制器，此选
     ],
 ···
 ```
+### 新增中间键概述
+
+![avatar](ws2.jpg)
+
 
 ### onHandshakeMiddleware 中间键
 
@@ -122,9 +126,6 @@ bean.php添加消息控制器中间键（```如有用到消息控制器，此选
 
 - 方法```before```为入，```after```为出，所有中间键先入后出顺序，参数与```@OnOpen```一致。
 - 如需阻断，则需```return [false, $response]```,```$response```可垮中间键传输
-
-
-简单默认示例
 
 ```php
 <?php
@@ -175,7 +176,7 @@ class DefaultAllowMiddleware extends AbstracHandshakeMiddleware
 
 
 
-内置用户绑定中间键，替换一般需实现```Cluster::register```用于用户绑定
+内置用户绑定中间键，替换此中间键一般需实现```Cluster::register```用于用户绑定
 
 ```php
 <?php
@@ -241,8 +242,16 @@ Cluster::transportToAll(string $message)
 ### 内置事件
 
 消息接收
-Jcsp\WsCluster\Event::RECV_MESSAGE
+```Jcsp\WsCluster\Event::RECV_MESSAGE```
 
+用户注册
+```Jcsp\WsCluster\Event::REGISTER```
 
+用户注销
+```Jcsp\WsCluster\Event::LOGOUT```
 
+server服务心跳
+```Jcsp\WsCluster\Event::DISCOVER```
 
+server服务离线
+```Jcsp\WsCluster\Event::SHUTDOWN```
