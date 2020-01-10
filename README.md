@@ -11,7 +11,7 @@
 
 流程请参见下图
 
-![avatar](ws.jpg)
+![avatar](images/ws.jpg)
 
 - ① 客户端发起握手请求并建立连接
 - ② 当前服务端向资源管理State注册并绑定当前用户信息
@@ -116,7 +116,7 @@ bean.php添加消息控制器中间键（```如有用到消息控制器，此选
 ```
 ### 新增中间键概述
 
-![avatar](ws2.jpg)
+![avatar](images/ws2.jpg)
 
 
 ### onHandshakeMiddleware 中间键
