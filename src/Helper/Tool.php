@@ -31,7 +31,7 @@ class Tool
      * @param int $num
      * @return array
      */
-    public static function moreProcess(string $name, $process, int $num = 1)
+    public static function moreProcess(string $name, $process, int $num = 1): array
     {
         $class = [];
         for ($i = 1; $i <= $num; $i++) {
