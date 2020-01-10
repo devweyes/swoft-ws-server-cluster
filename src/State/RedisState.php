@@ -104,7 +104,7 @@ class RedisState extends AbstractState
 
     /**
      * @param string $message
-     * @param mixed ...$uid
+     * @param $uid
      * @return bool
      */
     public function transportToUid(string $message, $uid): bool
@@ -142,7 +142,7 @@ class RedisState extends AbstractState
     {
         $serverId = $serverId ? : $this->getServerId();
         $this->redis->zRem($this->prefix . ':serverids', $serverId);
-        Event::shutdown($this->getServerId());
+        Event::shutdown($serverId);
     }
 
     /**
@@ -159,7 +159,7 @@ class RedisState extends AbstractState
      */
     public function getServerIds(): array
     {
-        return $this->redis->zRevRange($this->prefix . ':serverids',0, -1,true);
+        return $this->redis->zRevRange($this->prefix . ':serverids', 0, -1, true);
     }
 
     /**
