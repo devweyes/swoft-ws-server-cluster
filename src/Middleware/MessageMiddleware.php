@@ -25,7 +25,6 @@ class MessageMiddleware implements MiddlewareInterface
      */
     public function process(RequestInterface $request, MessageHandlerInterface $handler): ResponseInterface
     {
-    	d($request);
         return $handler->handle($request);
     }
 }
